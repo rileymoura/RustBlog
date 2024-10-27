@@ -30,6 +30,13 @@ impl MongoRepo {
         MongoRepo { user_col, post_col }
     }
 
+    pub fn login(&self, username: &str, password: &str) -> Result<Document, MongoError> {
+        let filter = doc! {"user": username, "password": password};
+        let user_detail = self.user_col.find_one(filter, None)?
+            .ok_or_else(|| MongoError::custom("User not found"))?;
+        Ok(user_detail)
+    }
+
     pub fn create_user(&self, new_user: User) -> Result<InsertOneResult, MongoError> {
         let user_doc = to_document(&new_user).map_err(MongoError::from)?; // Convert User to Document
         self.user_col.insert_one(user_doc, None)

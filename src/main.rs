@@ -1,11 +1,12 @@
 mod api; 
 mod models;
 mod repository;
+mod middleware;
 
 #[macro_use]
 extern crate rocket;
 
-use api::user_api::{create_user, get_user, update_user, delete_user, get_all_users};
+use api::user_api::{login, create_user, get_user, update_user, delete_user, get_all_users};
 use api::post_api::{create_post, get_post, update_post, delete_post, get_all_posts};
 use repository::mongodb_repo::MongoRepo;
 
@@ -14,7 +15,10 @@ fn rocket() -> _ {
     let db = MongoRepo::init();
     rocket::build()
         .manage(db)
-
+        
+        // LOGIN
+        .mount("/", routes![login])
+        
         // USERS
         .mount("/", routes![create_user])
         .mount("/", routes![get_user])
