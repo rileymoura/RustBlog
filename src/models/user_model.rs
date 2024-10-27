@@ -12,7 +12,7 @@ pub struct User {
 
 #[derive(Serialize, Deserialize)]
 pub struct LoginInfo {
-    pub user: String,
+    pub username: String,
     pub password: String
 }
 

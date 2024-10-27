@@ -1,11 +1,12 @@
 
 
-use crate::{models::post_model::Post, repository::mongodb_repo::MongoRepo};
+use crate::{models::post_model::Post, middleware::authentication::AuthToken,repository::mongodb_repo::MongoRepo};
 use mongodb::{results::InsertOneResult, bson::{oid::ObjectId, Document}};
 use rocket::{http::Status, serde::json::Json, State};
 
 #[post("/post", data = "<new_post>")]
 pub fn create_post(
+    _auth: AuthToken, //
     db: &State<MongoRepo>,
     new_post: Json<Post>,
 ) -> Result<Json<InsertOneResult>, Status> {
@@ -39,6 +40,7 @@ pub fn get_post(db: &State<MongoRepo>, path: String) -> Result<Json<Document>, S
 
 #[put("/post/<path>", data = "<new_post>")]
 pub fn update_post(
+    _auth: AuthToken, //
     db: &State<MongoRepo>,
     path: String,
     new_post: Json<Post>,
@@ -73,7 +75,7 @@ pub fn update_post(
 }
 
 #[delete("/post/<path>")]
-pub fn delete_post(db: &State<MongoRepo>, path: String) -> Result<Json<&str>, Status> {
+pub fn delete_post(_auth: AuthToken, db: &State<MongoRepo>, path: String) -> Result<Json<&str>, Status> {
     let id = path;
     if id.is_empty() {
         return Err(Status::BadRequest);

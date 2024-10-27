@@ -4,31 +4,38 @@ use mongodb::{results::InsertOneResult, bson::{oid::ObjectId, Document}};
 use rocket::{http::Status, serde::json::Json, State};
 
 #[post("/login", data = "<login_info>")]
-pub fn login(db: &State<MongoRepo>,
+pub fn login(
+    db: &State<MongoRepo>,
     login_info: Json<LoginInfo>,
 ) -> Result<Json<LoginResponse>, Status> {
-    let secret: &[u8] = b"worldrevolution1917"; // Replace with your actual secret key
+    let secret: &[u8] = b"worldrevolution1917"; // Ensure this is secure and not hard-coded in production
 
-    let username = &login_info.user.to_owned();
-    let password = &login_info.password.to_owned();
+    let username = &login_info.username;
+    let password = &login_info.password;
 
-    Claims {
-        sub: username.clone(),
-        exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize
-    };
-
-    
+    // Create claims after validating the user
     let user_detail = db.login(username, password);
 
+    println!("Login attempt for user {} with password {}", username, password);
+
     match user_detail {
-        Ok(claims) => {
-            let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(secret)).unwrap();
+        Ok(_claims) => {
+            let claims = Claims {
+                sub: username.to_owned(), // Ensure this is set correctly
+                exp: (chrono::Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
+            };
+
+            let token = encode(&Header::default(), &claims, &EncodingKey::from_secret(secret)).map_err(|_| Status::InternalServerError)?;
+            println!("Generated token: {}", token);
             Ok(Json(LoginResponse { token }))
         },
-        Err(_) => Err(Status::InternalServerError),
+        Err(e) => {
+            println!("Error: {}", e.to_string());
+            Err(Status::Unauthorized)
+        },
     }
-
 }
+
 
 #[post("/user", data = "<new_user>")]
 pub fn create_user(
@@ -51,7 +58,7 @@ pub fn create_user(
 }
 
 #[get("/user/<path>")]
-pub fn get_user(db: &State<MongoRepo>, path: String) -> Result<Json<Document>, Status> {
+pub fn get_user(_auth: AuthToken, db: &State<MongoRepo>, path: String) -> Result<Json<Document>, Status> {
     let id = path;
     if id.is_empty() {
         return Err(Status::BadRequest);
@@ -65,6 +72,7 @@ pub fn get_user(db: &State<MongoRepo>, path: String) -> Result<Json<Document>, S
 
 #[put("/user/<path>", data = "<new_user>")]
 pub fn update_user(
+    _auth: AuthToken, //
     db: &State<MongoRepo>,
     path: String,
     new_user: Json<User>,
@@ -97,7 +105,7 @@ pub fn update_user(
 }
 
 #[delete("/user/<path>")]
-pub fn delete_user(db: &State<MongoRepo>, path: String) -> Result<Json<&str>, Status> {
+pub fn delete_user(_auth: AuthToken, db: &State<MongoRepo>, path: String) -> Result<Json<&str>, Status> {
     let id = path;
     if id.is_empty() {
         return Err(Status::BadRequest);
@@ -116,7 +124,7 @@ pub fn delete_user(db: &State<MongoRepo>, path: String) -> Result<Json<&str>, St
 }
 
 #[get("/users")]
-pub fn get_all_users(db: &State<MongoRepo>) -> Result<Json<Vec<Document>>, Status> {
+pub fn get_all_users(_auth: AuthToken, db: &State<MongoRepo>) -> Result<Json<Vec<Document>>, Status> {
     let users = db.get_all_users();
     match users {
         Ok(users) => Ok(Json(users)),

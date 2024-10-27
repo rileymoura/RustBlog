@@ -31,6 +31,8 @@ impl MongoRepo {
     }
 
     pub fn login(&self, username: &str, password: &str) -> Result<Document, MongoError> {
+        println!("Querying for user: {}", username);
+        
         let filter = doc! {"user": username, "password": password};
         let user_detail = self.user_col.find_one(filter, None)?
             .ok_or_else(|| MongoError::custom("User not found"))?;
