@@ -1,7 +1,7 @@
 
 
 use crate::{models::user_model::User, repository::mongodb_repo::MongoRepo};
-use mongodb::{results::InsertOneResult, bson::oid::ObjectId};
+use mongodb::{results::InsertOneResult, bson::{oid::ObjectId, Document}};
 use rocket::{http::Status, serde::json::Json, State};
 
 #[post("/user", data = "<new_user>")]
@@ -21,7 +21,7 @@ pub fn create_user(
 }
 
 #[get("/user/<path>")]
-pub fn get_user(db: &State<MongoRepo>, path: String) -> Result<Json<User>, Status> {
+pub fn get_user(db: &State<MongoRepo>, path: String) -> Result<Json<Document>, Status> {
     let id = path;
     if id.is_empty() {
         return Err(Status::BadRequest);
@@ -38,7 +38,7 @@ pub fn update_user(
     db: &State<MongoRepo>,
     path: String,
     new_user: Json<User>,
-) -> Result<Json<User>, Status> {
+) -> Result<Json<Document>, Status> {
     if path.is_empty() {
         return Err(Status::BadRequest);
     }
@@ -84,7 +84,7 @@ pub fn delete_user(db: &State<MongoRepo>, path: String) -> Result<Json<&str>, St
 }
 
 #[get("/users")]
-pub fn get_all_users(db: &State<MongoRepo>) -> Result<Json<Vec<User>>, Status> {
+pub fn get_all_users(db: &State<MongoRepo>) -> Result<Json<Vec<Document>>, Status> {
     let users = db.get_all_users();
     match users {
         Ok(users) => Ok(Json(users)),

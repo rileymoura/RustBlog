@@ -5,8 +5,9 @@ edition = "2021"
 
 [dependencies]
 rocket = { version = "0.5.1", features = ["json"] }
-serde = "1.0.136"
-dotenv = "0.15.0"
+serde = { version = "1.0", features = ["derive"] }
+bson = "2.0"
+dotenv = "0.15"
 
 [dependencies.mongodb]
 version = "2.2.0"
