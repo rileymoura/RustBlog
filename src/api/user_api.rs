@@ -44,7 +44,7 @@ pub fn create_user(
     new_user: Json<User>,
 ) -> Result<Json<InsertOneResult>, Status> {
     match db.find_user_by_username(&new_user.user) {
-        Ok(Some(_)) => Err(Status::Conflict),
+        Ok(Some(_)) => Err(Status::Conflict), // change for json response l8r
         Ok(None) => {
             let data = User {
                 id: None,
