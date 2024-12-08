@@ -30,7 +30,7 @@ pub fn login(
             Ok(Json(LoginResponse { token }))
         },
         Err(e) => {
-            println!("Error: {}", e.to_string());
+            println!("Login failed for user {}: {}", username, e); // log more details for debugging
             Err(Status::Unauthorized)
         },
     }
@@ -43,17 +43,23 @@ pub fn create_user(
     db: &State<MongoRepo>,
     new_user: Json<User>,
 ) -> Result<Json<InsertOneResult>, Status> {
-    let data = User {
-        id: None,
-        name: new_user.name.to_owned(),
-        user: new_user.user.to_owned(),
-        password: new_user.password.to_owned(),
-    };
-
-    // Call the synchronous method
-    match db.create_user(data) {
-        Ok(result) => Ok(Json(result)), // Ensure result is of type InsertOneResult
-        Err(_) => Err(Status::InternalServerError),
+    match db.find_user_by_username(&new_user.user) {
+        Ok(Some(_)) => Err(Status::Conflict),
+        Ok(None) => {
+            let data = User {
+                id: None,
+                name: new_user.name.to_owned(),
+                user: new_user.user.to_owned(),
+                password: new_user.password.to_owned(),
+            };
+        
+            // Call the synchronous method
+            match db.create_user(data) {
+                Ok(result) => Ok(Json(result)), // Ensure result is of type InsertOneResult
+                Err(_) => Err(Status::InternalServerError),
+            }       
+        },
+        Err(_) => Err(Status::InternalServerError)
     }
 }
 

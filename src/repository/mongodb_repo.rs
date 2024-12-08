@@ -22,7 +22,7 @@ impl MongoRepo {
         dotenv().ok();
         let uri = env::var("MONGOURI").unwrap_or_else(|_| "Error loading env variable".to_string());
         let client = Client::with_uri_str(&uri).expect("Failed to initialize client");
-        let db = client.database("RustBlog");
+        let db = client.database("BlogRiley");
 
         let user_col: Collection<Document> = db.collection("User");
         let post_col: Collection<Document> = db.collection("Post");
@@ -35,7 +35,16 @@ impl MongoRepo {
         
         let filter = doc! {"user": username, "password": password};
         let user_detail = self.user_col.find_one(filter, None)?
-            .ok_or_else(|| MongoError::custom("User not found"))?;
+            .ok_or_else(|| MongoError::custom("Login details are wrong or user does not exist"))?;
+        Ok(user_detail)
+    }
+    
+    pub fn find_user_by_username(&self, username: &str) -> Result<Option<Document>, MongoError> {
+        let filter = doc! {"user": username};
+        // Perform the query to find the user by username
+        let user_detail = self.user_col.find_one(filter, None)?;
+    
+        // Return the user details (or None if not found)
         Ok(user_detail)
     }
 
